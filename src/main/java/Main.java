@@ -22,20 +22,33 @@ public class Main {
                     } else {
                         sizeToFreq.put(maxSize, ONE);
                     }
+                    sizeToFreq.notify();
                 }
             };
             Thread thread = new Thread(runnable);
             threadList.add(thread);
-            thread.start();
         }
-        for (Thread thread : threadList) {
-            thread.join();
+            Runnable runnable1 = () -> {
+                while (!Thread.interrupted()) {
+                    synchronized (sizeToFreq) {
+                        try {
+                            sizeToFreq.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println("Самое частое количество повторений " + sizeToFreq.keySet().stream().max(Comparator.comparing(sizeToFreq::get)) + " (встретилось " + Collections.max(sizeToFreq.values()) + " раз)");
+                    }
+                }
+            };
+            Thread thread1 = new Thread(runnable1);
+            thread1.start();
+
+            for (Thread thread3 : threadList) {
+                thread3.start();
+                thread3.join();
+            }
+            thread1.interrupt();
         }
-        System.out.println("Самое частое количество повторений " + sizeToFreq.keySet().stream().max(Comparator.comparing(sizeToFreq::get)) + " (встретилось " + Collections.max(sizeToFreq.values()) + " раз)");
-        for (Map.Entry<Integer, Integer> map : sizeToFreq.entrySet()){
-            System.out.println(map.getKey() + " - " + map.getValue() + " раз.");
-        }
-    }
 
     public static String generateRoute(String letters, int length) {
         Random random = new Random();
